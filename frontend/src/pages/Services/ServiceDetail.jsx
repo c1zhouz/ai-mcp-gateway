@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Descriptions, Table, Card, Tag, Spin, message } from 'antd';
+import { Descriptions, Table, Card, Tag, Spin, message, Button, Space } from 'antd';
+import { SyncOutlined } from '@ant-design/icons';
 import { servicesAPI } from '../../services/api';
 
 export default function ServiceDetail() {
@@ -28,13 +29,30 @@ export default function ServiceDetail() {
     }
   };
 
+  const onSyncTools = async () => {
+    try {
+      setLoading(true);
+      await servicesAPI.syncTools(id);
+      message.success('同步成功');
+      fetchDetail();
+    } catch (e) {
+      message.error('同步失败');
+      setLoading(false);
+    }
+  };
+
   if (loading || !service) {
     return <Spin size="large" style={{ display: 'block', margin: '100px auto', textAlign: 'center' }} />;
   }
 
   return (
     <div>
-      <Card title="服务详情" bordered={false} style={{ marginBottom: 24, borderRadius: 8 }}>
+      <Card 
+        title="服务详情" 
+        extra={<Button type="primary" icon={<SyncOutlined />} onClick={onSyncTools}>同步工具</Button>}
+        bordered={false} 
+        style={{ marginBottom: 24, borderRadius: 8 }}
+      >
         <Descriptions column={2}>
           <Descriptions.Item label="名称">{service.name}</Descriptions.Item>
           <Descriptions.Item label="状态">

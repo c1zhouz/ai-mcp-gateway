@@ -36,6 +36,7 @@ export const servicesAPI = {
   delete: (id) => api.delete(`/services/${id}`),
   getTools: (id) => api.get(`/services/${id}/tools`),
   healthCheck: (id) => api.post(`/services/${id}/health-check`),
+  syncTools: (id) => api.post(`/services/${id}/sync-tools`),
 };
 
 // Tools
