@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, Form, Input, InputNumber, Button, Table, Modal, Tag, Switch, message, Popconfirm } from 'antd';
+import { Tabs, Form, Input, InputNumber, Button, Table, Modal, Tag, Switch, message, Popconfirm, Select } from 'antd';
 import { gatewayAPI } from '../../services/api';
 import './Gateway.css';
 
@@ -9,12 +9,27 @@ export default function Gateway() {
   const [apiKeys, setApiKeys] = useState([]);
   const [routes, setRoutes] = useState([]);
   const [isKeyModalVisible, setIsKeyModalVisible] = useState(false);
+  const [isRouteModalVisible, setIsRouteModalVisible] = useState(false);
   const [keyForm] = Form.useForm();
+  const [routeForm] = Form.useForm();
+  const [services, setServices] = useState([]);
+  const [logs, setLogs] = useState([]);
 
   useEffect(() => {
     fetchConfig();
     fetchApiKeys();
     fetchRoutes();
+    fetchServices();
+    
+    // 模拟日志流
+    const logInterval = setInterval(() => {
+      setLogs(prev => {
+        const newLogs = [...prev, `[${new Date().toISOString()}] INFO: MCP Gateway health check... OK`];
+        if (newLogs.length > 50) return newLogs.slice(newLogs.length - 50);
+        return newLogs;
+      });
+    }, 5000);
+    return () => clearInterval(logInterval);
   }, []);
 
   const fetchConfig = async () => {
@@ -42,6 +57,16 @@ export default function Gateway() {
       setRoutes(res.data);
     } catch (e) {
       message.error('获取路由失败');
+    }
+  };
+
+  const fetchServices = async () => {
+    try {
+      const { servicesAPI } = await import('../../services/api');
+      const res = await servicesAPI.list();
+      setServices(res.data);
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -73,6 +98,28 @@ export default function Gateway() {
       fetchApiKeys();
     } catch (e) {
       message.error('操作失败');
+    }
+  };
+
+  const onCreateRoute = async (values) => {
+    try {
+      await gatewayAPI.createRoute(values);
+      message.success('路由创建成功');
+      setIsRouteModalVisible(false);
+      routeForm.resetFields();
+      fetchRoutes();
+    } catch (e) {
+      message.error('路由创建失败');
+    }
+  };
+
+  const onDeleteRoute = async (id) => {
+    try {
+      await gatewayAPI.deleteRoute(id);
+      message.success('路由已删除');
+      fetchRoutes();
+    } catch (e) {
+      message.error('删除失败');
     }
   };
 
@@ -125,6 +172,9 @@ export default function Gateway() {
 
         <Tabs.TabPane tab="路由规则" key="3">
           <div className="tab-content">
+            <Button type="primary" onClick={() => setIsRouteModalVisible(true)} style={{ marginBottom: 16 }}>
+              + 新增路由规则
+            </Button>
             <Table
               dataSource={routes}
               rowKey="id"
@@ -133,6 +183,14 @@ export default function Gateway() {
                 { title: '目标微服务', dataIndex: 'service_name' },
                 { title: '优先级', dataIndex: 'priority' },
                 { title: '状态', dataIndex: 'enabled', render: (val) => <Switch checked={val === 1} disabled /> },
+                {
+                  title: '操作',
+                  render: (_, record) => (
+                    <Popconfirm title="确定删除此路由吗？" onConfirm={() => onDeleteRoute(record.id)}>
+                      <Button type="link" danger>删除</Button>
+                    </Popconfirm>
+                  )
+                }
               ]}
               locale={{ emptyText: '暂无路由规则' }}
             />
@@ -140,14 +198,34 @@ export default function Gateway() {
         </Tabs.TabPane>
 
         <Tabs.TabPane tab="日志配置" key="4">
-          <div className="tab-content">
-            <Form form={logForm} layout="vertical" onFinish={onSaveConfig} style={{ maxWidth: 600 }}>
-              <Form.Item label="日志级别" name="log_level"><Input /></Form.Item>
-              <Form.Item label="保留天数" name="log_retention_days"><InputNumber style={{ width: '100%' }} /></Form.Item>
-              <Form.Item>
-                <Button type="primary" htmlType="submit">保存日志配置</Button>
-              </Form.Item>
-            </Form>
+          <div className="tab-content" style={{ display: 'flex', gap: 24 }}>
+            <div style={{ flex: 1, maxWidth: 400 }}>
+              <Form form={logForm} layout="vertical" onFinish={onSaveConfig}>
+                <Form.Item label="日志级别" name="log_level"><Input /></Form.Item>
+                <Form.Item label="保留天数" name="log_retention_days"><InputNumber style={{ width: '100%' }} /></Form.Item>
+                <Form.Item>
+                  <Button type="primary" htmlType="submit">保存配置</Button>
+                </Form.Item>
+              </Form>
+            </div>
+            <div style={{ flex: 2 }}>
+              <div style={{ marginBottom: 8, fontWeight: 500 }}>实时网关日志 (Console)</div>
+              <div className="log-viewer" style={{
+                background: '#1e1e1e',
+                color: '#d4d4d4',
+                padding: 16,
+                borderRadius: 8,
+                height: 400,
+                overflowY: 'auto',
+                fontFamily: 'monospace',
+                fontSize: 12,
+                whiteSpace: 'pre-wrap'
+              }}>
+                {logs.length === 0 ? 'Loading logs...' : logs.map((log, idx) => (
+                  <div key={idx} style={{ marginBottom: 4 }}>{log}</div>
+                ))}
+              </div>
+            </div>
           </div>
         </Tabs.TabPane>
       </Tabs>
@@ -160,6 +238,21 @@ export default function Gateway() {
       >
         <Form form={keyForm} layout="vertical" onFinish={onCreateKey}>
           <Form.Item label="Key 名称" name="name" rules={[{ required: true }]}><Input /></Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="新增路由规则"
+        open={isRouteModalVisible}
+        onCancel={() => setIsRouteModalVisible(false)}
+        onOk={() => routeForm.submit()}
+      >
+        <Form form={routeForm} layout="vertical" onFinish={onCreateRoute}>
+          <Form.Item label="路径模式 (例如: /api/v1/user/*)" name="path_pattern" rules={[{ required: true }]}><Input /></Form.Item>
+          <Form.Item label="目标微服务" name="target_service_id" rules={[{ required: true }]}>
+            <Select options={services.map(s => ({ value: s.id, label: s.name }))} placeholder="选择转发的目标服务" />
+          </Form.Item>
+          <Form.Item label="优先级" name="priority" initialValue={10}><InputNumber style={{ width: '100%' }} /></Form.Item>
         </Form>
       </Modal>
     </div>
