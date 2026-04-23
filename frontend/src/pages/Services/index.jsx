@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Badge, Tag, Button, Input, Select, Drawer, Form, message, Switch, Popconfirm } from 'antd';
+import { Row, Col, Card, Badge, Tag, Button, Input, Select, Drawer, Form, message, Switch, Popconfirm, Spin } from 'antd';
 import { CloudServerOutlined, ToolOutlined, DeleteOutlined, EditOutlined, RetweetOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { servicesAPI } from '../../services/api';
@@ -113,6 +113,3 @@ export default function Services() {
     </div>
   );
 }
-
-// NOTE: import Spin which was missing
-import { Spin } from 'antd';
