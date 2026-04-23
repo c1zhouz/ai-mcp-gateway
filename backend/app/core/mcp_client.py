@@ -1,5 +1,5 @@
 import httpx
-from httpx_sse import connect_sse
+from httpx_sse import aconnect_sse
 import json
 import asyncio
 from typing import List, Dict, Any
@@ -15,7 +15,7 @@ async def _mcp_rpc_call(service_url: str, method: str, params: dict = None) -> A
         # For simplicity in this short-lived model, we'll connect, get the endpoint, 
         # send the POST, and read the corresponding response event.
         
-        async with connect_sse(client, "GET", sse_url) as event_source:
+        async with aconnect_sse(client, "GET", sse_url) as event_source:
             # 1. Wait for endpoint event
             async for event in event_source.aiter_sse():
                 if event.event == "endpoint":
@@ -63,13 +63,16 @@ async def sync_tools(service_url: str) -> List[Dict]:
         # But for brevity, if the server requires it, we must do it.
         # Let's write a quick initialization flow.
         
+        service_url = service_url.strip()
         sse_url = service_url if service_url.endswith("/sse") else f"{service_url.rstrip('/')}/sse"
         post_url = None
         
         timeout = httpx.Timeout(10.0, read=30.0)
         async with httpx.AsyncClient(timeout=timeout) as client:
-            async with connect_sse(client, "GET", sse_url) as event_source:
-                async for event in event_source.aiter_sse():
+            async with aconnect_sse(client, "GET", sse_url) as event_source:
+                iterator = event_source.aiter_sse().__aiter__()
+                
+                async for event in iterator:
                     if event.event == "endpoint":
                         post_endpoint = event.data
                         if post_endpoint.startswith("http"):
@@ -96,7 +99,7 @@ async def sync_tools(service_url: str) -> List[Dict]:
                 await client.post(post_url, json=init_payload)
                 
                 # Wait for init response
-                async for event in event_source.aiter_sse():
+                async for event in iterator:
                     if event.event == "message":
                         data = json.loads(event.data)
                         if data.get("id") == "1":
@@ -108,7 +111,7 @@ async def sync_tools(service_url: str) -> List[Dict]:
                 # Send tools/list
                 await client.post(post_url, json={"jsonrpc": "2.0", "id": "2", "method": "tools/list"})
                 
-                async for event in event_source.aiter_sse():
+                async for event in iterator:
                     if event.event == "message":
                         data = json.loads(event.data)
                         if data.get("id") == "2":
@@ -130,13 +133,15 @@ async def sync_tools(service_url: str) -> List[Dict]:
 async def execute_tool(service_url: str, tool_name: str, arguments: dict) -> dict:
     """Connect to MCP service, call a tool, and close connection."""
     try:
+        service_url = service_url.strip()
         sse_url = service_url if service_url.endswith("/sse") else f"{service_url.rstrip('/')}/sse"
         post_url = None
         
         timeout = httpx.Timeout(10.0, read=60.0)
         async with httpx.AsyncClient(timeout=timeout) as client:
-            async with connect_sse(client, "GET", sse_url) as event_source:
-                async for event in event_source.aiter_sse():
+            async with aconnect_sse(client, "GET", sse_url) as event_source:
+                iterator = event_source.aiter_sse().__aiter__()
+                async for event in iterator:
                     if event.event == "endpoint":
                         post_endpoint = event.data
                         if post_endpoint.startswith("http"):
@@ -159,7 +164,7 @@ async def execute_tool(service_url: str, tool_name: str, arguments: dict) -> dic
                 }
                 await client.post(post_url, json=init_payload)
                 
-                async for event in event_source.aiter_sse():
+                async for event in iterator:
                     if event.event == "message":
                         data = json.loads(event.data)
                         if data.get("id") == "1":
@@ -179,7 +184,7 @@ async def execute_tool(service_url: str, tool_name: str, arguments: dict) -> dic
                 }
                 await client.post(post_url, json=call_payload)
                 
-                async for event in event_source.aiter_sse():
+                async for event in iterator:
                     if event.event == "message":
                         data = json.loads(event.data)
                         if data.get("id") == "2":

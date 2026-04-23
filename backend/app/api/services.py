@@ -116,7 +116,7 @@ async def sync_service_tools(service_id: str):
     tools_list = await sync_tools(service["address"])
     if not tools_list:
         await db.close()
-        return {"status": "failed", "message": "No tools found or connection failed"}
+        raise HTTPException(status_code=400, detail="No tools found or connection failed")
         
     await db.execute("DELETE FROM tools WHERE service_id=?", [service_id])
     
