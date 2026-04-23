@@ -4,6 +4,7 @@ import uuid
 import json
 import secrets
 from datetime import datetime
+from typing import Optional, List, Dict
 
 router = APIRouter(prefix="/api/gateway", tags=["gateway"])
 

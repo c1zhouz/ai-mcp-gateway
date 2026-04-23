@@ -4,6 +4,7 @@ from backend.app.models.service import ServiceCreate, ServiceUpdate
 import uuid
 import json
 from datetime import datetime
+from typing import Optional, List, Dict
 
 router = APIRouter(prefix="/api/services", tags=["services"])
 

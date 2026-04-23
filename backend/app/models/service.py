@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional, List, Dict
 
 
 class ServiceCreate(BaseModel):
@@ -11,11 +12,11 @@ class ServiceCreate(BaseModel):
 
 
 class ServiceUpdate(BaseModel):
-    name: str | None = None
-    address: str | None = None
-    description: str | None = None
-    health_check_interval: int | None = None
-    auto_reconnect: bool | None = None
+    name: Optional[str] = None
+    address: Optional[str] = None
+    description: Optional[str] = None
+    health_check_interval: Optional[int] = None
+    auto_reconnect: Optional[bool] = None
 
 
 class ServiceResponse(BaseModel):
@@ -27,5 +28,5 @@ class ServiceResponse(BaseModel):
     health_check_interval: int
     auto_reconnect: bool
     tool_count: int
-    last_heartbeat: str | None
+    last_heartbeat: Optional[str]
     created_at: str

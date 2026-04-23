@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tag, Spin } from 'antd';
 import { ToolOutlined, CheckCircleOutlined, SyncOutlined } from '@ant-design/icons';
-import './Chat.css';
+import '../../pages/Chat/Chat.css';
 
 export default function ToolCallCard({ toolCall }) {
   const { name, arguments: args, result, status, duration_ms } = toolCall;

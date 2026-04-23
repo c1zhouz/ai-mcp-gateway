@@ -6,6 +6,7 @@ from backend.app.core.agent import run_agent
 import uuid
 import json
 from datetime import datetime
+from typing import Optional, List, Dict
 from backend.app.models.chat import ChatRequest
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])

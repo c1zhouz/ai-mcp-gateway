@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Input, Button } from 'antd';
 import { SendOutlined } from '@ant-design/icons';
-import './Chat.css';
+import '../../pages/Chat/Chat.css';
 
 export default function ChatInput({ onSend, disabled }) {
   const [value, setValue] = useState('');

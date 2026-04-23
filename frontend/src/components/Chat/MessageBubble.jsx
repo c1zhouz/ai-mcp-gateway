@@ -4,7 +4,7 @@ import ThinkingBlock from './ThinkingBlock';
 import ToolCallCard from './ToolCallCard';
 import { Avatar } from 'antd';
 import { UserOutlined, RobotOutlined } from '@ant-design/icons';
-import './Chat.css';
+import '../../pages/Chat/Chat.css';
 
 export default function MessageBubble({ message }) {
   const isUser = message.role === 'user';

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { DownOutlined, RightOutlined } from '@ant-design/icons';
-import './Chat.css';
+import '../../pages/Chat/Chat.css';
 
 export default function ThinkingBlock({ content }) {
   const [expanded, setExpanded] = useState(false);

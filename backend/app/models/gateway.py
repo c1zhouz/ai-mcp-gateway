@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional, List, Dict
 
 class GatewayConfig(BaseModel):
     name: str
@@ -12,8 +13,8 @@ class GatewayConfig(BaseModel):
 
 class ApiKeyCreate(BaseModel):
     name: str
-    permissions: list[str] = ["read"]
-    expires_at: str | None = None
+    permissions: List[str] = ["read"]
+    expires_at: Optional[str] = None
 
 class RouteRuleCreate(BaseModel):
     path_pattern: str
