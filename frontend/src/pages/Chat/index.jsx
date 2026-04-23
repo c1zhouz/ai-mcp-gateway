@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Layout, Input, Select, Button, Form, message, Tag, Space, Spin } from 'antd';
+import { Layout, Input, Select, Button, Form, message, Tag, Space, Spin, AutoComplete } from 'antd';
 import { SettingOutlined, LinkOutlined, DisconnectOutlined } from '@ant-design/icons';
 import useChatStore from '../../stores/chatStore';
 import useSSE from '../../hooks/useSSE';
@@ -74,11 +74,18 @@ export default function Chat() {
               <Input.Password placeholder="sk-..." />
             </Form.Item>
             <Form.Item name="model" label="模型" initialValue="gpt-4o">
-              <Select options={[
-                { value: 'gpt-4o', label: 'gpt-4o' },
-                { value: 'gpt-4-turbo', label: 'gpt-4-turbo' },
-                { value: 'gpt-3.5-turbo', label: 'gpt-3.5-turbo' }
-              ]} />
+              <AutoComplete
+                options={[
+                  { value: 'gpt-4o' },
+                  { value: 'gpt-4-turbo' },
+                  { value: 'gpt-3.5-turbo' },
+                  { value: 'claude-3-5-sonnet-20241022' },
+                  { value: 'claude-3-haiku-20240307' },
+                  { value: 'qwen-plus' },
+                  { value: 'deepseek-chat' }
+                ]}
+                placeholder="选择或输入模型名称"
+              />
             </Form.Item>
             <Form.Item name="llmBaseUrl" label="LLM Base URL (可选)">
               <Input placeholder="https://api.openai.com/v1" />
