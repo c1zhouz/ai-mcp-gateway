@@ -1,0 +1,10 @@
+.gateway-container {
+  background: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  min-height: 100%;
+}
+
+.tab-content {
+  padding-top: 16px;
+}
