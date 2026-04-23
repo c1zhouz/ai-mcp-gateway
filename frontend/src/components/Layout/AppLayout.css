@@ -1,0 +1,73 @@
+.app-layout {
+  min-height: 100vh;
+}
+
+.app-sider {
+  background: #fff !important;
+  border-right: 1px solid #f0f0f0;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 10;
+}
+
+.app-sider .ant-menu {
+  border-inline-end: none !important;
+}
+
+.app-logo {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.logo-icon {
+  font-size: 24px;
+  color: #1677ff;
+}
+
+.logo-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1d1d1f;
+  white-space: nowrap;
+}
+
+.app-header {
+  background: #fff !important;
+  padding: 0 24px !important;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 9;
+  height: 64px;
+}
+
+.collapse-trigger {
+  font-size: 18px;
+  cursor: pointer;
+  margin-right: 16px;
+  color: #666;
+}
+
+.page-title {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.header-right {
+  margin-left: auto;
+}
+
+.app-content {
+  margin: 24px;
+  min-height: calc(100vh - 64px - 48px);
+}
