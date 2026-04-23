@@ -10,16 +10,23 @@ export default function Tools() {
   
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [currentTool, setCurrentTool] = useState(null);
+  
+  const [searchText, setSearchText] = useState('');
+  const [selectedService, setSelectedService] = useState(null);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [searchText, selectedService]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
+      const params = {};
+      if (searchText) params.search = searchText;
+      if (selectedService) params.service_id = selectedService;
+
       const [toolsRes, svcsRes] = await Promise.all([
-        toolsAPI.list(),
+        toolsAPI.list(params),
         servicesAPI.list()
       ]);
       setTools(toolsRes.data);
@@ -82,12 +89,17 @@ export default function Tools() {
   return (
     <div className="tools-container">
       <div className="tools-action-bar">
-        <Input.Search placeholder="搜索工具名称/描述..." style={{ width: 300 }} />
+        <Input.Search 
+          placeholder="搜索工具名称/描述..." 
+          style={{ width: 300 }} 
+          onSearch={(val) => { setSearchText(val); fetchData(); }} 
+        />
         <Select 
           placeholder="筛选服务" 
           style={{ width: 200, marginLeft: 16 }} 
           allowClear
           options={services.map(s => ({ value: s.id, label: s.name }))} 
+          onChange={(val) => { setSelectedService(val); }}
         />
       </div>
 
