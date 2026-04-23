@@ -1,36 +1,36 @@
-# Phase 4: MCP Protocol Implementation Design
+# Phase 4: MCP 协议通信与深度功能设计文档
 
-## 1. Overview
-The goal of Phase 4 is to implement real Model Context Protocol (MCP) communication between the AI Gateway and the registered microservices. The gateway will use the SSE (Server-Sent Events) over HTTP transport to dynamically discover tools from microservices and route LLM tool calls to them for execution.
+## 1. 概述
+Phase 4 的核心目标是在 AI 网关与已注册的微服务之间实现真正的 Model Context Protocol (MCP) 通信。网关将使用基于 HTTP 的 **SSE (Server-Sent Events)** 传输协议来动态发现微服务提供的工具，并将大模型 (LLM) 生成的工具调用请求路由至对应的微服务执行。
 
-## 2. Architecture & Transport
-*   **Protocol Choice**: We will exclusively support the **SSE over HTTP** transport for MCP. This perfectly aligns with the gateway's distributed microservice architecture.
-*   **Library**: We will utilize the official `mcp` Python SDK (or implement a lightweight standard JSON-RPC over SSE client) within the FastAPI backend to handle the underlying protocol complexities.
+## 2. 架构与传输协议
+*   **协议选择**: 我们将独家支持 MCP 的 **SSE over HTTP** 传输方式。这完美契合了网关作为分布式微服务中心的架构定位。
+*   **底层库支持**: 我们将在 FastAPI 后端引入官方的 `mcp` Python SDK（或手写轻量级的 SSE JSON-RPC 客户端）来处理底层的握手和协议规范细节。
 
-## 3. Component Details
+## 3. 核心组件设计
 
-### 3.1. MCP Client Wrapper (`backend/app/core/mcp_client.py`)
-A new core utility will be created to manage MCP connections and operations:
-*   `sync_tools(service_url: str) -> List[Dict]`: Connects to a service's `/sse` endpoint, issues a `tools/list` JSON-RPC request, parses the returned JSON Schema, and returns the list of available tools.
-*   `execute_tool(service_url: str, tool_name: str, arguments: dict) -> dict`: Establishes a short-lived SSE connection to the service, issues a `tools/call` JSON-RPC request with the provided arguments, awaits the result, closes the connection, and returns the payload.
+### 3.1. MCP 客户端封装 (`backend/app/core/mcp_client.py`)
+创建一个新的核心工具类，用来管理 MCP 的连接与操作：
+*   `sync_tools(service_url: str) -> List[Dict]`: 连接到微服务的 `/sse` 端点，发送 `tools/list` JSON-RPC 请求，解析返回的工具 JSON Schema 定义，并返回可用的工具列表。
+*   `execute_tool(service_url: str, tool_name: str, arguments: dict) -> dict`: 与微服务建立一个短期的 SSE 连接，利用传入的参数发送 `tools/call` 请求，等待对方执行并返回结果后，断开连接并将结果数据返回。
 
-### 3.2. Tool Discovery & Synchronization (Option C)
-*   **On-Creation Auto-Sync**: When a user adds a new microservice via `POST /api/services`, the backend will immediately call `sync_tools()` before returning the success response. The fetched tools will be inserted/upserted into the `tools` SQLite table, linking them to the newly created `service_id`.
-*   **Manual Refresh API**: A new endpoint `POST /api/services/{id}/sync-tools` will be added. This allows the user to manually trigger a re-sync if the downstream microservice updates its tool definitions.
-*   **Frontend Updates**: The Services page UI will be updated to trigger the sync on creation, and a "Sync Tools" button will be added to the service card or details view.
+### 3.2. 工具发现与同步机制 (策略 C)
+*   **创建时自动同步**: 当用户通过 `POST /api/services` 接口添加新微服务时，后端在保存服务信息后，会立即触发一次 `sync_tools()`。抓取到的所有工具将被插入/更新到网关的 `tools` SQLite 数据表中，并与新创建的 `service_id` 绑定。
+*   **手动刷新 API**: 增加一个新的接口 `POST /api/services/{id}/sync-tools`。如果下游微服务更新了它的代码和工具定义，用户可以通过调用此接口让网关重新拉取并覆盖工具缓存。
+*   **前端页面调整**: 微服务管理页面 (Services) 会在新建成功后立刻展示出抓取到的工具数量，同时在微服务卡片或详情页中增加一个手动“同步工具”的操作按钮。
 
-### 3.3. Tool Execution & Dynamic Routing (Option A)
-*   **Short-Lived Connections**: To maintain simplicity and statelessness in the gateway, tool executions will use "short connections". For every tool call, a new SSE connection is established, the call is made, the result is fetched, and the connection is torn down.
-*   **Chat Agent Updates (`backend/app/core/agent.py`)**:
-    1.  When the LLM issues a tool call, the agent looks up the physical address (`service.address`) of the microservice via the `service_id`.
-    2.  The agent pauses LLM generation, invoking `mcp_client.execute_tool()`.
-    3.  Once the real result is retrieved, the gateway streams a `tool_result` event to the frontend (including latency metrics).
-    4.  The result is appended to the conversation context, and the LLM is prompted to continue generating the final response.
-*   **Analytics**: Upon successful execution, the gateway will increment the `call_count` for that specific tool in the database.
+### 3.3. 工具执行与动态路由调度 (策略 A)
+*   **短连接执行**: 为了保持网关的高并发与无状态特性，工具执行采用“按需短连接”方式。每次大模型需要调用工具时才建立 SSE 连接，拿到结果后立马拆除。
+*   **聊天代理改造 (`backend/app/core/agent.py`)**:
+    1.  当大模型决定调用某个工具时，网关代理通过工具关联的 `service_id`，从数据库查出该微服务的物理网络地址 (`service.address`)。
+    2.  网关暂停大模型的回复生成，转而调用 `mcp_client.execute_tool()` 执行工具。
+    3.  拿到真实结果后，网关向前端通过 SSE 流推送 `tool_result` 事件（包含执行结果和耗时 `duration_ms`，用于更新 ToolCallCard）。
+    4.  网关将真实结果作为 User Message（或 Tool Message 格式）塞回给大模型的上下文，提示大模型继续总结并生成最终回复。
+*   **数据统计**: 工具执行成功后，网关会自动将数据库中该工具的 `call_count` 字段加 1。
 
-## 4. Error Handling
-*   If a microservice is offline during `sync_tools`, the gateway will log an error but still allow the service to be created (with 0 tools initially), relying on manual sync later.
-*   If a tool execution fails (e.g., service timeout, invalid arguments), the gateway will catch the exception and return a formatted error JSON to the LLM (e.g., `{"error": "Service unavailable or timeout"}`), allowing the LLM to gracefully handle the failure and inform the user.
+## 4. 异常处理机制
+*   如果微服务在初次注册时网络不通（`sync_tools` 失败），网关仍会允许注册成功，但在日志中记录警告，此时该服务下的工具数量为 0。用户可以等服务就绪后手动点击同步。
+*   如果在对话测试中工具执行失败（比如微服务宕机、超时、参数不合法报错），网关会捕获该异常，并将格式化后的错误信息（例如 `{"error": "服务连接超时"}`）返回给大模型。大模型据此可以直接向用户解释调用失败的原因，避免系统白屏或崩溃。
 
-## 5. Security & Constraints
-*   The gateway assumes that internal microservice URLs are trusted. In a production environment, API key authentication might be required between the Gateway and the Microservice, but for Phase 4 MVP, we will rely on network-level trust.
+## 5. 安全性限制
+*   在 Phase 4 (MVP) 阶段，网关默认所有录入的微服务 URL 均处于可信内网环境，暂时不引入微服务侧的 API Key 鉴权校验（仅依靠网络层面的连通性）。
