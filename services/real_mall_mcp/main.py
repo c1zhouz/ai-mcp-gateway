@@ -83,5 +83,6 @@ async def get_sales_report(start_date: str, end_date: str, category: Optional[st
 
 if __name__ == "__main__":
     port = int(os.getenv("MCP_PORT", "5001"))
+    mcp.settings.port = port
     # Run the FastMCP server with SSE transport
-    mcp.run("sse", port=port)
+    mcp.run("sse")
