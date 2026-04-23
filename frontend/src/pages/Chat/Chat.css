@@ -143,6 +143,17 @@
   margin-bottom: 0;
 }
 
+.message-bubble ul,
+.message-bubble ol {
+  padding-left: 24px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.message-bubble li {
+  margin-bottom: 4px;
+}
+
 .message-bubble pre {
   background: rgba(0,0,0,0.04);
   padding: 12px;
