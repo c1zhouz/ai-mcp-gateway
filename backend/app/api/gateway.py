@@ -63,7 +63,12 @@ async def create_api_key(data: dict):
 @router.delete("/api-keys/{key_id}")
 async def revoke_api_key(key_id: str):
     db = await get_db()
-    await db.execute("UPDATE api_keys SET status='revoked' WHERE id=?", [key_id])
+    row = await db.execute("SELECT status FROM api_keys WHERE id=?", [key_id])
+    key = await row.fetchone()
+    if key and key["status"] == "active":
+        await db.execute("UPDATE api_keys SET status='revoked' WHERE id=?", [key_id])
+    else:
+        await db.execute("DELETE FROM api_keys WHERE id=?", [key_id])
     await db.commit()
     await db.close()
     return {"message": "ok"}

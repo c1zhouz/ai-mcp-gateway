@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, Form, Input, InputNumber, Button, Table, Modal, Tag, Switch, message, Popconfirm, Select } from 'antd';
+import { Tabs, Form, Input, InputNumber, Button, Table, Modal, Tag, Switch, message, Popconfirm, Select, Checkbox, DatePicker, Typography } from 'antd';
 import { gatewayAPI } from '../../services/api';
 import './Gateway.css';
 
@@ -81,8 +81,26 @@ export default function Gateway() {
 
   const onCreateKey = async (values) => {
     try {
-      const res = await gatewayAPI.createApiKey(values);
-      message.success(`创建成功，Key: ${res.data.key_value}`);
+      const payload = {
+        ...values,
+        expires_at: values.expires_at ? values.expires_at.toISOString() : null,
+      };
+      const res = await gatewayAPI.createApiKey(payload);
+      
+      Modal.success({
+        title: 'API Key 创建成功',
+        content: (
+          <div>
+            <p>请妥善保管您的 API Key，关闭此窗口后将无法再次查看完整密钥。</p>
+            <div style={{ background: '#f5f5f5', padding: '12px', borderRadius: '4px', marginTop: '16px' }}>
+              <Typography.Text copyable style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                {res.data.key_value}
+              </Typography.Text>
+            </div>
+          </div>
+        ),
+      });
+      
       setIsKeyModalVisible(false);
       keyForm.resetFields();
       fetchApiKeys();
@@ -158,11 +176,25 @@ export default function Gateway() {
                 {
                   title: '操作',
                   render: (_, record) => (
-                    record.status === 'active' && (
-                      <Popconfirm title="确定吊销此 Key 吗？" onConfirm={() => onRevokeKey(record.id)}>
-                        <Button type="link" danger>吊销</Button>
-                      </Popconfirm>
-                    )
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {record.status === 'active' ? (
+                        <Popconfirm title="确定吊销此 Key 吗？" onConfirm={() => onRevokeKey(record.id)}>
+                          <Button type="link" danger>吊销</Button>
+                        </Popconfirm>
+                      ) : (
+                        <Popconfirm title="确定彻底删除此历史记录吗？" onConfirm={async () => {
+                          try {
+                            await gatewayAPI.deleteApiKey(record.id);
+                            message.success('历史记录已删除');
+                            fetchApiKeys();
+                          } catch (e) {
+                            message.error('删除失败');
+                          }
+                        }}>
+                          <Button type="link" style={{ color: '#999' }}>删除记录</Button>
+                        </Popconfirm>
+                      )}
+                    </div>
                   )
                 }
               ]}
@@ -235,9 +267,20 @@ export default function Gateway() {
         open={isKeyModalVisible}
         onCancel={() => setIsKeyModalVisible(false)}
         onOk={() => keyForm.submit()}
+        width={500}
       >
         <Form form={keyForm} layout="vertical" onFinish={onCreateKey}>
-          <Form.Item label="Key 名称" name="name" rules={[{ required: true }]}><Input /></Form.Item>
+          <Form.Item label="Key 名称" name="name" rules={[{ required: true }]}><Input placeholder="例如: 内部系统调用 Key" /></Form.Item>
+          <Form.Item label="权限分配" name="permissions" initialValue={['read']}>
+            <Checkbox.Group options={[
+              { label: '只读 (Read)', value: 'read' },
+              { label: '写入 (Write)', value: 'write' },
+              { label: '管理 (Admin)', value: 'admin' },
+            ]} />
+          </Form.Item>
+          <Form.Item label="过期时间" name="expires_at" tooltip="留空表示永久有效">
+            <DatePicker showTime style={{ width: '100%' }} placeholder="选择过期日期和时间" />
+          </Form.Item>
         </Form>
       </Modal>
 
