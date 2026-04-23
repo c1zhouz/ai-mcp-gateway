@@ -31,6 +31,7 @@ async def send_message(req: ChatRequest):
             llm_api_key=req.llm_api_key,
             model=req.model,
             llm_base_url=req.llm_base_url,
+            service_id=req.service_id,
         ):
             yield f"event: {event['event']}\ndata: {event['data']}\n\n"
 

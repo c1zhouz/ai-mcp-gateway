@@ -1,9 +1,11 @@
 import json
+import time
 from backend.app.core.llm_client import create_llm_client
-
+from backend.app.core.mcp_client import execute_tool
+from backend.app.models.database import get_db
 
 async def run_agent(message: str, tools: list, llm_api_key: str, model: str = "gpt-4o",
-                    llm_base_url: str = None):
+                    llm_base_url: str = None, service_id: str = None):
     """Agent 编排器：执行 LLM 调用循环并 yield SSE 事件"""
     client = create_llm_client(llm_api_key, llm_base_url)
 
@@ -56,11 +58,36 @@ async def run_agent(message: str, tools: list, llm_api_key: str, model: str = "g
                     ensure_ascii=False
                 )}
 
-                # 模拟工具执行 (实际应通过 MCP 客户端调用)
-                tool_result = {"code": 0, "message": "success", "data": f"Mock result for {fn_name}"}
+                # Execute via MCP Client
+                start_time = time.time()
+                tool_result = {"status": "error", "error": "Unknown error"}
+                
+                if service_id:
+                    db = await get_db()
+                    service_row = await db.execute("SELECT address FROM services WHERE id = ?", [service_id])
+                    service = await service_row.fetchone()
+                    if service:
+                        service_url = service["address"]
+                        # Execute real tool
+                        exec_result = await execute_tool(service_url, fn_name, fn_args)
+                        
+                        if exec_result.get("status") == "success":
+                            tool_result = exec_result.get("content", exec_result)
+                            # Update call count
+                            await db.execute("UPDATE tools SET call_count = call_count + 1 WHERE name = ? AND service_id = ?", [fn_name, service_id])
+                            await db.commit()
+                        else:
+                            tool_result = exec_result
+                    else:
+                        tool_result = {"status": "error", "error": "Service not found in DB"}
+                    await db.close()
+                else:
+                    tool_result = {"status": "error", "error": "No service_id provided for tool call"}
+
+                duration_ms = int((time.time() - start_time) * 1000)
 
                 yield {"event": "tool_result", "data": json.dumps(
-                    {"id": tc_id, "name": fn_name, "result": tool_result, "status": "completed", "duration_ms": 150},
+                    {"id": tc_id, "name": fn_name, "result": tool_result, "status": "completed", "duration_ms": duration_ms},
                     ensure_ascii=False
                 )}
 
