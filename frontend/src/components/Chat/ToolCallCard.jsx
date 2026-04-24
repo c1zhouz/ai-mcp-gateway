@@ -32,7 +32,7 @@ export default function ToolCallCard({ toolCall }) {
         {result && (
           <div className="section result">
             <div className="section-title">结果:</div>
-            <pre><code>{JSON.stringify(result, null, 2)}</code></pre>
+            <pre className="result-content"><code>{JSON.stringify(result, null, 2)}</code></pre>
           </div>
         )}
       </div>

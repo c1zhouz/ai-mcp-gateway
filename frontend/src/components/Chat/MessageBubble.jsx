@@ -6,7 +6,7 @@ import { Avatar } from 'antd';
 import { UserOutlined, RobotOutlined } from '@ant-design/icons';
 import '../../pages/Chat/Chat.css';
 
-export default function MessageBubble({ message }) {
+export default function MessageBubble({ message, isSending }) {
   const isUser = message.role === 'user';
 
   return (
@@ -24,10 +24,21 @@ export default function MessageBubble({ message }) {
           <ToolCallCard key={tc.id || idx} toolCall={tc} />
         ))}
         
-        {message.content && (
+        {message.content ? (
           <div className="message-bubble">
             <ReactMarkdown>{message.content}</ReactMarkdown>
           </div>
+        ) : (
+          isSending && !isUser && (
+            (!message.toolCalls || message.toolCalls.length === 0 || message.toolCalls[message.toolCalls.length - 1].status === 'completed') && (
+              <div className="message-bubble thinking-indicator">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span style={{ marginLeft: 8, fontSize: '0.9em', color: '#888' }}>思考中...</span>
+              </div>
+            )
+          )
         )}
       </div>
 

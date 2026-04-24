@@ -27,6 +27,10 @@ export default function Chat() {
   const [form] = Form.useForm();
   const messagesEndRef = useRef(null);
   const [services, setServices] = React.useState([]);
+  const [modelOptions, setModelOptions] = React.useState(() => {
+    const saved = localStorage.getItem('chat_models');
+    return saved ? JSON.parse(saved) : [{ value: 'deepseek-v3-2-251201' }];
+  });
 
   useEffect(() => {
     servicesAPI.list().then(res => setServices(res.data)).catch(console.error);
@@ -47,6 +51,13 @@ export default function Chat() {
         setTools(toolsRes.data.filter(t => t.enabled));
       } else {
         setTools([]);
+      }
+      
+      // Add new model to history if it doesn't exist
+      if (values.model && !modelOptions.some(opt => opt.value === values.model)) {
+        const newOptions = [{ value: values.model }, ...modelOptions].slice(0, 10);
+        setModelOptions(newOptions);
+        localStorage.setItem('chat_models', JSON.stringify(newOptions));
       }
       
       setConnected(true);
@@ -73,17 +84,9 @@ export default function Chat() {
             <Form.Item name="llmApiKey" label="LLM API Key" rules={[{ required: true }]}>
               <Input.Password placeholder="sk-..." />
             </Form.Item>
-            <Form.Item name="model" label="模型" initialValue="gpt-4o">
+            <Form.Item name="model" label="模型" initialValue="deepseek-v3-2-251201">
               <AutoComplete
-                options={[
-                  { value: 'gpt-4o' },
-                  { value: 'gpt-4-turbo' },
-                  { value: 'gpt-3.5-turbo' },
-                  { value: 'claude-3-5-sonnet-20241022' },
-                  { value: 'claude-3-haiku-20240307' },
-                  { value: 'qwen-plus' },
-                  { value: 'deepseek-chat' }
-                ]}
+                options={modelOptions}
                 placeholder="选择或输入模型名称"
               />
             </Form.Item>
@@ -137,8 +140,12 @@ export default function Chat() {
             </div>
           ) : (
             <div className="messages-list">
-              {messages.map(msg => (
-                <MessageBubble key={msg.id} message={msg} />
+              {messages.map((msg, index) => (
+                <MessageBubble 
+                  key={msg.id} 
+                  message={msg} 
+                  isSending={isSending && index === messages.length - 1} 
+                />
               ))}
               <div ref={messagesEndRef} />
             </div>

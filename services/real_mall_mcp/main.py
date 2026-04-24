@@ -4,8 +4,8 @@ from typing import Optional
 from mcp.server.fastmcp import FastMCP
 from sqlalchemy import select, func
 from dotenv import load_dotenv
-from .database import AsyncSessionLocal
-from .models import Product, Order
+from database import AsyncSessionLocal
+from models import Sku, GroupBuyOrderList
 
 load_dotenv()
 
@@ -13,36 +13,34 @@ load_dotenv()
 mcp = FastMCP("Real Mall MCP Server")
 
 @mcp.tool()
-async def check_inventory(product_id: Optional[str] = None, low_stock_threshold: Optional[int] = None) -> list[dict]:
+async def list_goods(goods_id: Optional[str] = None) -> list[dict]:
     """
-    检查商品库存状态。
-    如果指定 product_id，则精确查询。
-    如果指定 low_stock_threshold，则返回所有库存小于等于该阈值的商品，用于低库存预警。
+    查询商城的商品(SKU)信息及价格。
+    如果指定 goods_id，则精确查询。
+    否则返回所有商品的列表。
     """
     async with AsyncSessionLocal() as session:
-        stmt = select(Product)
-        if product_id:
-            stmt = stmt.where(Product.id == product_id)
-        if low_stock_threshold is not None:
-            stmt = stmt.where(Product.stock <= low_stock_threshold)
+        stmt = select(Sku)
+        if goods_id:
+            stmt = stmt.where(Sku.goods_id == goods_id)
             
         result = await session.execute(stmt)
-        products = result.scalars().all()
+        skus = result.scalars().all()
         
         return [
             {
-                "product_id": p.id,
-                "name": p.name,
-                "category": p.category,
-                "price": p.price,
-                "stock": p.stock
-            } for p in products
+                "goods_id": s.goods_id,
+                "goods_name": s.goods_name,
+                "original_price": float(s.original_price) if s.original_price else 0.0,
+                "source": s.source,
+                "channel": s.channel
+            } for s in skus
         ]
 
 @mcp.tool()
-async def get_sales_report(start_date: str, end_date: str, category: Optional[str] = None) -> dict:
+async def get_sales_report(start_date: str, end_date: str) -> dict:
     """
-    获取指定日期区间（YYYY-MM-DD）的销售报表。包含总收入、订单总数以及分商品统计。
+    获取指定日期区间（YYYY-MM-DD）的拼团销售报表。包含总成单金额、订单总数以及分商品的成单统计。
     """
     try:
         start_dt = datetime.strptime(start_date, "%Y-%m-%d")
@@ -51,28 +49,33 @@ async def get_sales_report(start_date: str, end_date: str, category: Optional[st
         return {"error": "Invalid date format, use YYYY-MM-DD"}
         
     async with AsyncSessionLocal() as session:
-        # Base query
-        stmt = select(Order, Product).join(Product, Order.product_id == Product.id)\
-            .where(Order.created_at >= start_dt)\
-            .where(Order.created_at <= end_dt)
-            
-        if category:
-            stmt = stmt.where(Product.category == category)
+        # Base query joining group_buy_order_list with sku on goods_id
+        stmt = select(GroupBuyOrderList, Sku).outerjoin(Sku, GroupBuyOrderList.goods_id == Sku.goods_id)\
+            .where(GroupBuyOrderList.create_time >= start_dt)\
+            .where(GroupBuyOrderList.create_time <= end_dt)
             
         result = await session.execute(stmt)
         records = result.all()
         
-        total_revenue = sum(r.Order.total_price for r in records)
+        # Calculate revenue based on original_price - deduction_price
+        total_revenue = 0.0
         total_orders = len(records)
-        
-        # Product breakdown
         breakdown = {}
+        
         for r in records:
-            p_name = r.Product.name
-            if p_name not in breakdown:
-                breakdown[p_name] = {"quantity": 0, "revenue": 0}
-            breakdown[p_name]["quantity"] += r.Order.quantity
-            breakdown[p_name]["revenue"] += r.Order.total_price
+            order = r.GroupBuyOrderList
+            sku = r.Sku
+            
+            # calculate pay price approximately
+            pay_price = float(order.original_price or 0) - float(order.deduction_price or 0)
+            total_revenue += pay_price
+            
+            goods_name = sku.goods_name if sku else f"Unknown({order.goods_id})"
+            
+            if goods_name not in breakdown:
+                breakdown[goods_name] = {"quantity": 0, "revenue": 0.0}
+            breakdown[goods_name]["quantity"] += 1
+            breakdown[goods_name]["revenue"] += pay_price
             
         return {
             "period": f"{start_date} to {end_date}",
