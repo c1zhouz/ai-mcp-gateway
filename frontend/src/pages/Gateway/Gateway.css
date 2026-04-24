@@ -1,10 +1,73 @@
 .gateway-container {
-  background: #fff;
-  padding: 24px;
-  border-radius: 8px;
-  min-height: 100%;
+  padding: 0;
+  animation: fadeIn 0.5s ease-out;
 }
 
 .tab-content {
-  padding-top: 16px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  border-radius: 0 0 12px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-top: none;
+}
+
+/* 覆盖 Ant Design Tabs 样式 */
+.gateway-container .ant-tabs-nav {
+  margin-bottom: 0 !important;
+}
+
+.gateway-container .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  background: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(5px);
+}
+
+.gateway-container .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-bottom-color: transparent !important;
+}
+
+.premium-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.log-viewer {
+  background: #1e1e1e !important;
+  color: #d4d4d4 !important;
+  height: 450px;
+  overflow-y: auto;
+  font-family: 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  font-size: 13px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #333;
+}
+
+/* 自定义滚动条 */
+.log-viewer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.log-viewer::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.log-viewer::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+.log-viewer::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

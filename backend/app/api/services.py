@@ -5,6 +5,7 @@ import uuid
 import json
 from datetime import datetime
 from backend.app.core.mcp_client import sync_tools
+from backend.app.core.logger import log_manager
 from typing import Optional, List, Dict
 
 router = APIRouter(prefix="/api/services", tags=["services"])
@@ -40,6 +41,7 @@ async def create_service(data: ServiceCreate):
             )
         await db.execute("UPDATE services SET tool_count = ?, status='online' WHERE id = ?", [tool_count, service_id])
     
+    await log_manager.log(f"成功注册微服务: {data.name}，发现 {tool_count} 个工具", "INFO")
     await db.commit()
     await db.close()
     return {"id": service_id, "tool_count": tool_count}
@@ -100,6 +102,13 @@ async def health_check(service_id: str):
     db = await get_db()
     await db.execute("UPDATE services SET status='online', last_heartbeat=? WHERE id=?",
                      [datetime.now().isoformat(), service_id])
+    
+    # 模拟获取名称以便记录日志
+    row = await db.execute("SELECT name FROM services WHERE id=?", [service_id])
+    service = await row.fetchone()
+    if service:
+        await log_manager.log(f"微服务 [{service['name']}] 健康检查通过", "INFO")
+        
     await db.commit()
     await db.close()
     return {"status": "online"}

@@ -3,6 +3,7 @@ import time
 from backend.app.core.llm_client import create_llm_client
 from backend.app.core.mcp_client import execute_tool
 from backend.app.models.database import get_db
+from backend.app.core.logger import log_manager
 
 async def run_agent(message: str, tools: list, llm_api_key: str, model: str = "gpt-4o",
                     llm_base_url: str = None, service_id: str = None):
@@ -58,6 +59,8 @@ async def run_agent(message: str, tools: list, llm_api_key: str, model: str = "g
                     ensure_ascii=False
                 )}
 
+                await log_manager.log(f"正在通过 MCP 调用工具: {fn_name}", "TOOL")
+
                 # Execute via MCP Client
                 start_time = time.time()
                 tool_result = {"status": "error", "error": "Unknown error"}
@@ -90,6 +93,8 @@ async def run_agent(message: str, tools: list, llm_api_key: str, model: str = "g
                     {"id": tc_id, "name": fn_name, "result": tool_result, "status": "completed", "duration_ms": duration_ms},
                     ensure_ascii=False
                 )}
+
+                await log_manager.log(f"工具 {fn_name} 调用成功，耗时 {duration_ms}ms", "TOOL")
 
                 messages.append({
                     "role": "tool",
