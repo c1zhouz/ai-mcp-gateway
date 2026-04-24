@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, Form, Input, InputNumber, Button, Table, Modal, Tag, Switch, message, Popconfirm, Select, Checkbox, DatePicker, Typography } from 'antd';
 import { gatewayAPI } from '../../services/api';
+import useLogStream from '../../hooks/useLogStream';
 import './Gateway.css';
 
 export default function Gateway() {
@@ -13,23 +14,19 @@ export default function Gateway() {
   const [keyForm] = Form.useForm();
   const [routeForm] = Form.useForm();
   const [services, setServices] = useState([]);
-  const [logs, setLogs] = useState([]);
+  const { logs } = useLogStream();
+  const logEndRef = React.useRef(null);
 
   useEffect(() => {
+    if (logEndRef.current) {
+      logEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [logs]);
+
     fetchConfig();
     fetchApiKeys();
     fetchRoutes();
     fetchServices();
-    
-    // 模拟日志流
-    const logInterval = setInterval(() => {
-      setLogs(prev => {
-        const newLogs = [...prev, `[${new Date().toISOString()}] INFO: MCP Gateway health check... OK`];
-        if (newLogs.length > 50) return newLogs.slice(newLogs.length - 50);
-        return newLogs;
-      });
-    }, 5000);
-    return () => clearInterval(logInterval);
   }, []);
 
   const fetchConfig = async () => {
@@ -242,20 +239,22 @@ export default function Gateway() {
             </div>
             <div style={{ flex: 2 }}>
               <div style={{ marginBottom: 8, fontWeight: 500 }}>实时网关日志 (Console)</div>
-              <div className="log-viewer" style={{
-                background: '#1e1e1e',
-                color: '#d4d4d4',
-                padding: 16,
-                borderRadius: 8,
-                height: 400,
-                overflowY: 'auto',
-                fontFamily: 'monospace',
-                fontSize: 12,
-                whiteSpace: 'pre-wrap'
-              }}>
-                {logs.length === 0 ? 'Loading logs...' : logs.map((log, idx) => (
-                  <div key={idx} style={{ marginBottom: 4 }}>{log}</div>
+              <div className="log-viewer premium-card">
+                {logs.length === 0 ? (
+                  <div style={{ color: '#666' }}>等待日志流连接...</div>
+                ) : logs.map((log, idx) => (
+                  <div key={idx} style={{ marginBottom: 4, display: 'flex', gap: 8 }}>
+                    <span style={{ color: '#6a9955' }}>[{log.time}]</span>
+                    <span style={{ 
+                      color: log.level === 'ERROR' ? '#f44747' : 
+                             log.level === 'TOOL' ? '#ce9178' : '#569cd6',
+                      fontWeight: 'bold',
+                      minWidth: 50
+                    }}>{log.level}:</span>
+                    <span>{log.message}</span>
+                  </div>
                 ))}
+                <div ref={logEndRef} />
               </div>
             </div>
           </div>

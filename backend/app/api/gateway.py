@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from backend.app.models.database import get_db
+from backend.app.core.logger import log_manager
 import uuid
 import json
 import secrets
@@ -116,3 +118,19 @@ async def delete_route(route_id: str):
     await db.commit()
     await db.close()
     return {"message": "ok"}
+
+
+@router.get("/logs/stream")
+async def stream_logs():
+    async def event_generator():
+        # 发送历史记录
+        for entry in log_manager.history:
+            yield f"data: {json.dumps(entry, ensure_ascii=False)}\n\n"
+        
+        # 持续发送新日志
+        while True:
+            # 这里的 get 是阻塞的，但由于是异步的，不会阻塞 event loop
+            entry = await log_manager.queue.get()
+            yield f"data: {json.dumps(entry, ensure_ascii=False)}\n\n"
+            
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
