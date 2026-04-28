@@ -9,6 +9,8 @@ class ServiceCreate(BaseModel):
     description: str = ""
     health_check_interval: int = 30
     auto_reconnect: bool = True
+    source_file: str = ""
+    python_path: str = ""
 
 
 class ServiceUpdate(BaseModel):
@@ -17,6 +19,8 @@ class ServiceUpdate(BaseModel):
     description: Optional[str] = None
     health_check_interval: Optional[int] = None
     auto_reconnect: Optional[bool] = None
+    source_file: Optional[str] = None
+    python_path: Optional[str] = None
 
 
 class ServiceResponse(BaseModel):

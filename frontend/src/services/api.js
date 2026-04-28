@@ -12,6 +12,7 @@ export const dashboardAPI = {
   getTrend: () => api.get('/dashboard/trend'),
   getTopTools: () => api.get('/dashboard/top-tools'),
   getActivities: () => api.get('/dashboard/activities'),
+  getAlerts: () => api.get('/dashboard/alerts'),
 };
 
 // Gateway
@@ -43,7 +44,11 @@ export const servicesAPI = {
 export const toolsAPI = {
   list: (params) => api.get('/tools', { params }),
   get: (id) => api.get(`/tools/${id}`),
+  create: (data) => api.post('/tools', data),
+  update: (id, data) => api.put(`/tools/${id}`, data),
   updateStatus: (id, enabled) => api.patch(`/tools/${id}`, { enabled }),
+  delete: (id) => api.delete(`/tools/${id}`),
+  deploy: (id) => api.post(`/tools/${id}/deploy`),
 };
 
 // Chat

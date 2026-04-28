@@ -24,7 +24,9 @@ async def init_db():
             auto_reconnect INTEGER DEFAULT 1,
             tool_count INTEGER DEFAULT 0,
             last_heartbeat TEXT,
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            source_file TEXT DEFAULT '',
+            python_path TEXT DEFAULT ''
         );
 
         CREATE TABLE IF NOT EXISTS tools (
@@ -35,6 +37,7 @@ async def init_db():
             parameters_schema TEXT DEFAULT '{}',
             enabled INTEGER DEFAULT 1,
             call_count INTEGER DEFAULT 0,
+            code TEXT DEFAULT '',
             FOREIGN KEY (service_id) REFERENCES services(id)
         );
 
@@ -88,7 +91,27 @@ async def init_db():
             FOREIGN KEY (session_id) REFERENCES chat_sessions(id)
         );
 
+        CREATE TABLE IF NOT EXISTS request_history (
+            time_hour TEXT PRIMARY KEY, -- 格式: YYYY-MM-DD HH:00
+            count INTEGER DEFAULT 0,
+            error_count INTEGER DEFAULT 0
+        );
+
         INSERT OR IGNORE INTO gateway_config (id) VALUES (1);
     """)
     await db.commit()
+
+    # Migrate existing databases: add new columns if they don't exist
+    migrations = [
+        ("tools", "code", "TEXT DEFAULT ''"),
+        ("services", "source_file", "TEXT DEFAULT ''"),
+        ("services", "python_path", "TEXT DEFAULT ''"),
+    ]
+    for table, col, col_def in migrations:
+        try:
+            await db.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_def}")
+            await db.commit()
+        except Exception:
+            pass  # Column already exists
+
     await db.close()

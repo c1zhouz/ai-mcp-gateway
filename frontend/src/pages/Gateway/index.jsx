@@ -23,6 +23,7 @@ export default function Gateway() {
     }
   }, [logs]);
 
+  useEffect(() => {
     fetchConfig();
     fetchApiKeys();
     fetchRoutes();

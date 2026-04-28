@@ -98,13 +98,27 @@ export default function Services() {
         </Row>
       </Spin>
 
-      <Drawer title="添加微服务" width={400} onClose={() => setDrawerVisible(false)} open={drawerVisible}>
+      <Drawer title="添加微服务" width={480} onClose={() => setDrawerVisible(false)} open={drawerVisible}>
         <Form form={form} layout="vertical" onFinish={onSaveService}>
           <Form.Item name="name" label="服务名称" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item name="address" label="服务地址 (URL)" rules={[{ required: true }]}><Input placeholder="http://127.0.0.1:5000" /></Form.Item>
-          <Form.Item name="description" label="描述"><Input.TextArea rows={3} /></Form.Item>
+          <Form.Item name="description" label="描述"><Input.TextArea rows={2} /></Form.Item>
           <Form.Item name="health_check_interval" label="健康检查间隔 (秒)" initialValue={30}><InputNumber style={{ width: '100%' }} /></Form.Item>
           <Form.Item name="auto_reconnect" label="自动重连" valuePropName="checked" initialValue={true}><Switch /></Form.Item>
+          <Form.Item 
+            name="source_file" 
+            label="源代码路径 (用于动态部署工具)"
+            extra="填写微服务 main.py 的完整绝对路径，部署新工具时会自动写入此文件"
+          >
+            <Input placeholder="/path/to/services/my_service/main.py" />
+          </Form.Item>
+          <Form.Item 
+            name="python_path" 
+            label="Python 解释器路径"
+            extra="用于重启微服务，默认 python3。如使用虚拟环境请填写完整路径"
+          >
+            <Input placeholder="/path/to/venv/bin/python" />
+          </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" block>提交保存</Button>
           </Form.Item>

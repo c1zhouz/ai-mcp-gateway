@@ -25,9 +25,10 @@ async def create_service(data: ServiceCreate):
     db = await get_db()
     service_id = str(uuid.uuid4())
     await db.execute(
-        "INSERT INTO services (id,name,address,description,status,health_check_interval,auto_reconnect,created_at) VALUES (?,?,?,?,?,?,?,?)",
+        "INSERT INTO services (id,name,address,description,status,health_check_interval,auto_reconnect,created_at,source_file,python_path) VALUES (?,?,?,?,?,?,?,?,?,?)",
         [service_id, data.name, data.address, data.description, "offline",
-         data.health_check_interval, int(data.auto_reconnect), datetime.now().isoformat()]
+         data.health_check_interval, int(data.auto_reconnect), datetime.now().isoformat(),
+         data.source_file, data.python_path]
     )
     
     tools_list = await sync_tools(data.address)

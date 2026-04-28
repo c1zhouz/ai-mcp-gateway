@@ -9,6 +9,7 @@ import {
   BellOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import './AppLayout.css';
@@ -67,7 +68,7 @@ export default function AppLayout() {
             {menuItems.find((item) => item.key === selectedKey)?.label || '首页'}
           </h2>
           <Space className="header-right" size={20}>
-            <Badge count={3} size="small">
+            <Badge size="small">
               <BellOutlined style={{ fontSize: 18 }} />
             </Badge>
             <Dropdown
@@ -79,7 +80,7 @@ export default function AppLayout() {
               }}
             >
               <Space style={{ cursor: 'pointer' }}>
-                <Avatar style={{ backgroundColor: '#1677ff' }}>管</Avatar>
+                <Avatar style={{ backgroundColor: '#1677ff' }} icon={<UserOutlined />} />
                 <span>管理员</span>
               </Space>
             </Dropdown>

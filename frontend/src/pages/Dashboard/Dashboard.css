@@ -3,57 +3,99 @@
   animation: fadeIn 0.5s ease-out;
 }
 
-.stat-card {
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.dashboard-header {
+  margin-bottom: 24px;
 }
 
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
-}
-
-.stat-card .ant-statistic-title {
-  font-size: 14px;
-  color: #8c8c8c;
-  font-weight: 500;
-}
-
-.stat-card .ant-statistic-content {
+.dashboard-header h1 {
+  font-size: 24px;
   font-weight: 700;
-  background: linear-gradient(45deg, #1677ff, #722ed1);
+  margin-bottom: 4px;
+  background: var(--premium-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.chart-card {
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+.stat-card {
+  border-radius: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: var(--border-glass);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: var(--premium-shadow);
 }
 
-.log-card {
+.stat-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card .ant-statistic-title {
+  font-size: 14px;
+  color: #666;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.stat-card .ant-statistic-content {
+  font-weight: 800;
+  font-size: 28px;
+  background: var(--premium-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.chart-card, .log-card {
+  border-radius: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: var(--border-glass);
+  box-shadow: var(--premium-shadow);
+  overflow: hidden;
+}
+
+.dashboard-container .ant-card-head {
+  border-bottom: var(--border-glass);
+  background: rgba(255, 255, 255, 0.4);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.log-ticker {
+  background: #1e1e1e;
   border-radius: 12px;
+  padding: 12px 16px;
+  margin-top: 24px;
+  color: #fff;
+  font-family: monospace;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #333;
+}
+
+.ticker-label {
+  background: #ce9178;
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+.ticker-content {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
 }
 
 .loading-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
-  min-height: 400px;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.dashboard-container .ant-card-head {
-  border-bottom: 1px solid #f0f0f0;
-  background: #fafafa;
-  font-weight: 600;
+  height: 100vh;
+  background: #f0f2f5;
 }

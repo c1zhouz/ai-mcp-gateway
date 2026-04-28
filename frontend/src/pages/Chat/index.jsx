@@ -105,7 +105,7 @@ export default function Chat() {
             </Form.Item>
           </Form>
 
-          <div style={{ marginTop: 24, textAlign: 'center' }}>
+          <div className="connection-area" style={{ marginTop: 24, textAlign: 'center' }}>
             {isConnected ? (
               <Button type="primary" danger block icon={<DisconnectOutlined />} onClick={onDisconnect}>
                 断开连接
@@ -119,12 +119,23 @@ export default function Chat() {
 
           {isConnected && tools.length > 0 && (
             <div className="tools-indicator">
-              <div style={{ marginBottom: 12, color: '#666' }}>已挂载工具 ({tools.length})</div>
-              <Space size={[0, 8]} wrap>
+              <div style={{ marginBottom: 12, color: '#666', fontWeight: 600 }}>已挂载工具 ({tools.length})</div>
+              <div className="tools-list-container">
                 {tools.map((t, i) => (
-                  <Tag key={t.id} color={i % 2 === 0 ? 'blue' : 'green'}>{t.name}</Tag>
+                  <div key={i} style={{ 
+                    padding: '6px 12px', 
+                    background: '#f5f5f5', 
+                    borderRadius: '4px', 
+                    fontSize: '13px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <span style={{ color: '#999', width: '20px' }}>{i + 1}.</span>
+                    <span style={{ color: '#333' }}>{t.name}</span>
+                  </div>
                 ))}
-              </Space>
+              </div>
             </div>
           )}
         </div>

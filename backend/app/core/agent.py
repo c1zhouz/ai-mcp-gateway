@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime
 from backend.app.core.llm_client import create_llm_client
 from backend.app.core.mcp_client import execute_tool
 from backend.app.models.database import get_db
@@ -8,6 +9,18 @@ from backend.app.core.logger import log_manager
 async def run_agent(message: str, tools: list, llm_api_key: str, model: str = "gpt-4o",
                     llm_base_url: str = None, service_id: str = None):
     """Agent 编排器：执行 LLM 调用循环并 yield SSE 事件"""
+    
+    # 记录一次请求
+    db = await get_db()
+    now_hour = datetime.now().strftime("%Y-%m-%d %H:00")
+    await db.execute("""
+        INSERT INTO request_history (time_hour, count) 
+        VALUES (?, 1) 
+        ON CONFLICT(time_hour) DO UPDATE SET count = count + 1
+    """, [now_hour])
+    await db.commit()
+    await db.close()
+
     client = create_llm_client(llm_api_key, llm_base_url)
 
     # 构建工具定义
@@ -81,8 +94,13 @@ async def run_agent(message: str, tools: list, llm_api_key: str, model: str = "g
                             await db.commit()
                         else:
                             tool_result = exec_result
+                            # 记录一次错误
+                            await db.execute("UPDATE request_history SET error_count = error_count + 1 WHERE time_hour = ?", [datetime.now().strftime("%Y-%m-%d %H:00")])
+                            await db.commit()
                     else:
                         tool_result = {"status": "error", "error": "Service not found in DB"}
+                        await db.execute("UPDATE request_history SET error_count = error_count + 1 WHERE time_hour = ?", [datetime.now().strftime("%Y-%m-%d %H:00")])
+                        await db.commit()
                     await db.close()
                 else:
                     tool_result = {"status": "error", "error": "No service_id provided for tool call"}

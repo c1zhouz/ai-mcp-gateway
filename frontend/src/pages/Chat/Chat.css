@@ -1,6 +1,7 @@
 /* Layout */
 .chat-layout {
-  height: calc(100vh - 64px - 48px); /* Full height minus header and margins */
+  height: calc(100vh - 112px); 
+  max-height: calc(100vh - 112px);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02);
@@ -10,6 +11,9 @@
   border-right: 1px solid #f0f0f0;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  overflow-y: auto; /* Enable scrolling for the entire sidebar */
+  background: #fff;
 }
 
 .sider-header {
@@ -21,7 +25,6 @@
 
 .sider-body {
   padding: 20px;
-  overflow-y: auto;
   flex: 1;
 }
 
@@ -34,9 +37,16 @@
 }
 
 .tools-indicator {
-  margin-top: 32px;
-  padding-top: 24px;
+  margin-top: 24px;
+  padding-top: 20px;
   border-top: 1px solid #f0f0f0;
+}
+
+.tools-list-container {
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* Chat Area */

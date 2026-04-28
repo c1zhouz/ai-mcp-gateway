@@ -1,5 +1,14 @@
 .app-layout {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content {
+  margin: 24px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .app-sider {
@@ -67,7 +76,3 @@
   margin-left: auto;
 }
 
-.app-content {
-  margin: 24px;
-  min-height: calc(100vh - 64px - 48px);
-}
