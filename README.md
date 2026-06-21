@@ -1,6 +1,6 @@
 # AI MCP Gateway
 
-一个面向 AI Agent 工具调用场景的轻量级 MCP Gateway 原型系统。项目目标不是完整企业级网关，而是演示一条可运行、可审计、可测试的 Agent 调用 MCP 工具链路：
+一个面向企业 AI Agent 应用场景的 MCP 网关系统，为大语言模型提供标准化的工具调用能力接入层，支持 MCP 服务注册、心跳检测、API Key 鉴权路由、⼯具调用可视化与数据统计等 AI Infra 应用场景。
 
 ```text
 AI Agent / Chat UI
@@ -124,13 +124,5 @@ npm run build
 ```
 
 当前 `npm run build` 可能出现 Vite 的大 chunk warning，这是前端包体积优化提醒，不影响功能运行。
-
-## 项目定位
-
-本项目适合作为实习求职项目展示：
-
-- 展示对 MCP、AI Agent 工具调用、网关鉴权和路由的理解。
-- 展示从“页面 CRUD 原型”补齐到“可运行核心链路”的工程意识。
-- 展示基础测试、日志、健康检查和安全风险收缩能力。
 
 更详细的定位与边界见 [docs/project-positioning.md](docs/project-positioning.md)。
