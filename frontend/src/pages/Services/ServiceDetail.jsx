@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Descriptions, Table, Card, Tag, Spin, message, Button, Space } from 'antd';
+import { Descriptions, Table, Card, Tag, Spin, message, Button } from 'antd';
 import { SyncOutlined } from '@ant-design/icons';
 import { servicesAPI } from '../../services/api';
 
@@ -10,11 +10,7 @@ export default function ServiceDetail() {
   const [tools, setTools] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDetail();
-  }, [id]);
-
-  const fetchDetail = async () => {
+  async function fetchDetail() {
     try {
       const [svcRes, toolsRes] = await Promise.all([
         servicesAPI.get(id),
@@ -22,12 +18,18 @@ export default function ServiceDetail() {
       ]);
       setService(svcRes.data);
       setTools(toolsRes.data);
-    } catch (e) {
+    } catch {
       message.error('加载失败');
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchDetail();
+    // Re-fetch when the route id changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const onSyncTools = async () => {
     try {
@@ -35,7 +37,7 @@ export default function ServiceDetail() {
       await servicesAPI.syncTools(id);
       message.success('同步成功');
       fetchDetail();
-    } catch (e) {
+    } catch {
       message.error('同步失败');
       setLoading(false);
     }

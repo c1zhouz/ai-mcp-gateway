@@ -1,7 +1,15 @@
 .superpowers/
 venv/
+venv_*/
 node_modules/
 __pycache__/
+*.py[cod]
 .env
+*.env
+*.log
+*.db
+dist/
+frontend/dist/
+services/**/venv/
 
 .worktrees/

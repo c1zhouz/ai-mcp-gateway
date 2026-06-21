@@ -7,6 +7,7 @@ from backend.app.models.database import get_db
 from backend.app.core.logger import log_manager
 
 async def run_agent(message: str, tools: list, llm_api_key: str, model: str = "gpt-4o",
+                    history: list = None,
                     llm_base_url: str = None, service_id: str = None):
     """Agent 编排器：执行 LLM 调用循环并 yield SSE 事件"""
     
@@ -37,8 +38,9 @@ async def run_agent(message: str, tools: list, llm_api_key: str, model: str = "g
 
     messages = [
         {"role": "system", "content": "你是一个有用的AI助手。你可以使用提供的工具来帮助回答用户的问题。在调用工具前，请先思考你的计划。"},
-        {"role": "user", "content": message},
     ]
+    messages.extend(history or [])
+    messages.append({"role": "user", "content": message})
 
     max_iterations = 10
     for _ in range(max_iterations):

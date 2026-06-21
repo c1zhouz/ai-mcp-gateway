@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Row, Col, Card, Statistic, Table, List, Tag, Spin, Space, Badge } from 'antd';
+import { useEffect, useState } from 'react';
+import { Row, Col, Card, Statistic, List, Spin, Space, Badge } from 'antd';
 import { ApiOutlined, AppstoreOutlined, LineChartOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { Line, Bar } from '@ant-design/plots';
 import { dashboardAPI } from '../../services/api';
@@ -9,24 +9,21 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [trendData, setTrendData] = useState([]);
   const [topTools, setTopTools] = useState([]);
-  const [activities, setActivities] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsRes, trendRes, toolsRes, activitiesRes, alertsRes] = await Promise.all([
+        const [statsRes, trendRes, toolsRes, alertsRes] = await Promise.all([
           dashboardAPI.getStats(),
           dashboardAPI.getTrend(),
           dashboardAPI.getTopTools(),
-          dashboardAPI.getActivities(),
           dashboardAPI.getAlerts(),
         ]);
         setStats(statsRes.data);
         setTrendData(trendRes.data);
         setTopTools(toolsRes.data);
-        setActivities(activitiesRes.data);
         setAlerts(alertsRes.data);
       } catch (error) {
         console.error('Failed to fetch dashboard data', error);

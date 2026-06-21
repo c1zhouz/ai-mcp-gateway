@@ -153,7 +153,7 @@
 
 **左侧配置面板 (320px, 可折叠)**：
 - 配置区标题 "配置"
-- 后端地址输入框（默认 `http://127.0.0.1:8777`）
+- 后端地址输入框（默认 `http://127.0.0.1:8000/gateway`）
 - 网关 API Key 输入框（密码类型，带切换可见按钮）
 - LLM API Key 输入框（密码类型，带切换可见按钮）
 - 选择微服务下拉框
@@ -252,7 +252,7 @@
 {
   "session_id": "optional-uuid",
   "message": "用户消息文本",
-  "gateway_url": "http://127.0.0.1:8777",
+  "gateway_url": "http://127.0.0.1:8000/gateway",
   "gateway_api_key": "gw-xxx",
   "llm_api_key": "sk-xxx",
   "service_id": "service-uuid",

@@ -4,17 +4,39 @@ from backend.app.models.service import ServiceCreate, ServiceUpdate
 import uuid
 import json
 from datetime import datetime
-from backend.app.core.mcp_client import sync_tools
+from backend.app.core.mcp_client import check_service_health, sync_tools
 from backend.app.core.logger import log_manager
-from typing import Optional, List, Dict
 
 router = APIRouter(prefix="/api/services", tags=["services"])
+
+SERVICE_COLUMNS = """
+    id,
+    name,
+    address,
+    description,
+    status,
+    health_check_interval,
+    auto_reconnect,
+    tool_count,
+    last_heartbeat,
+    created_at
+"""
+
+TOOL_COLUMNS = """
+    id,
+    service_id,
+    name,
+    description,
+    parameters_schema,
+    enabled,
+    call_count
+"""
 
 
 @router.get("")
 async def list_services():
     db = await get_db()
-    rows = await db.execute("SELECT * FROM services ORDER BY created_at DESC")
+    rows = await db.execute(f"SELECT {SERVICE_COLUMNS} FROM services ORDER BY created_at DESC")
     result = [dict(r) async for r in rows]
     await db.close()
     return result
@@ -25,10 +47,9 @@ async def create_service(data: ServiceCreate):
     db = await get_db()
     service_id = str(uuid.uuid4())
     await db.execute(
-        "INSERT INTO services (id,name,address,description,status,health_check_interval,auto_reconnect,created_at,source_file,python_path) VALUES (?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO services (id,name,address,description,status,health_check_interval,auto_reconnect,created_at) VALUES (?,?,?,?,?,?,?,?)",
         [service_id, data.name, data.address, data.description, "offline",
-         data.health_check_interval, int(data.auto_reconnect), datetime.now().isoformat(),
-         data.source_file, data.python_path]
+         data.health_check_interval, int(data.auto_reconnect), datetime.now().isoformat()]
     )
     
     tools_list = await sync_tools(data.address)
@@ -51,7 +72,7 @@ async def create_service(data: ServiceCreate):
 @router.get("/{service_id}")
 async def get_service(service_id: str):
     db = await get_db()
-    row = await db.execute("SELECT * FROM services WHERE id=?", [service_id])
+    row = await db.execute(f"SELECT {SERVICE_COLUMNS} FROM services WHERE id=?", [service_id])
     service = await row.fetchone()
     if not service:
         await db.close()
@@ -88,7 +109,7 @@ async def delete_service(service_id: str):
 @router.get("/{service_id}/tools")
 async def get_service_tools(service_id: str):
     db = await get_db()
-    rows = await db.execute("SELECT * FROM tools WHERE service_id=?", [service_id])
+    rows = await db.execute(f"SELECT {TOOL_COLUMNS} FROM tools WHERE service_id=?", [service_id])
     result = []
     async for r in rows:
         d = dict(r)
@@ -101,18 +122,38 @@ async def get_service_tools(service_id: str):
 @router.post("/{service_id}/health-check")
 async def health_check(service_id: str):
     db = await get_db()
-    await db.execute("UPDATE services SET status='online', last_heartbeat=? WHERE id=?",
-                     [datetime.now().isoformat(), service_id])
-    
-    # 模拟获取名称以便记录日志
-    row = await db.execute("SELECT name FROM services WHERE id=?", [service_id])
+    row = await db.execute("SELECT name, address FROM services WHERE id=?", [service_id])
     service = await row.fetchone()
-    if service:
-        await log_manager.log(f"微服务 [{service['name']}] 健康检查通过", "INFO")
-        
+    if not service:
+        await db.close()
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    health = await check_service_health(service["address"])
+    if not health.get("ok"):
+        await db.execute("UPDATE services SET status='offline' WHERE id=?", [service_id])
+        await db.commit()
+        await db.close()
+        error = health.get("error", "health check failed")
+        await log_manager.log(f"微服务 [{service['name']}] 健康检查失败: {error}", "ERROR")
+        raise HTTPException(status_code=503, detail=error)
+
+    tools_list = health.get("tools", [])
+    await db.execute("DELETE FROM tools WHERE service_id=?", [service_id])
+    for t in tools_list:
+        await db.execute(
+            """INSERT INTO tools (id, service_id, name, description, parameters_schema, enabled)
+               VALUES (?, ?, ?, ?, ?, 1)""",
+            [str(uuid.uuid4()), service_id, t["name"], t.get("description", ""), json.dumps(t.get("inputSchema", {}))]
+        )
+
+    await db.execute(
+        "UPDATE services SET status='online', last_heartbeat=?, tool_count=? WHERE id=?",
+        [datetime.now().isoformat(), len(tools_list), service_id],
+    )
+    await log_manager.log(f"微服务 [{service['name']}] 健康检查通过", "INFO")
     await db.commit()
     await db.close()
-    return {"status": "online"}
+    return {"status": "online", "tool_count": len(tools_list)}
 
 @router.post("/{service_id}/sync-tools")
 async def sync_service_tools(service_id: str):
@@ -143,4 +184,3 @@ async def sync_service_tools(service_id: str):
     await db.close()
     
     return {"status": "success", "tool_count": tool_count}
-

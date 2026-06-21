@@ -1,4 +1,3 @@
-import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import ThinkingBlock from './ThinkingBlock';
 import ToolCallCard from './ToolCallCard';

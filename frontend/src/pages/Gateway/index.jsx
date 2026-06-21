@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Tabs, Form, Input, InputNumber, Button, Table, Modal, Tag, Switch, message, Popconfirm, Select, Checkbox, DatePicker, Typography } from 'antd';
 import { gatewayAPI } from '../../services/api';
 import useLogStream from '../../hooks/useLogStream';
@@ -15,7 +15,7 @@ export default function Gateway() {
   const [routeForm] = Form.useForm();
   const [services, setServices] = useState([]);
   const { logs } = useLogStream();
-  const logEndRef = React.useRef(null);
+  const logEndRef = useRef(null);
 
   useEffect(() => {
     if (logEndRef.current) {
@@ -28,51 +28,53 @@ export default function Gateway() {
     fetchApiKeys();
     fetchRoutes();
     fetchServices();
+    // Run once when the gateway page mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchConfig = async () => {
+  async function fetchConfig() {
     try {
       const res = await gatewayAPI.getConfig();
       configForm.setFieldsValue(res.data);
       logForm.setFieldsValue(res.data);
-    } catch (e) {
+    } catch {
       message.error('获取配置失败');
     }
-  };
+  }
 
-  const fetchApiKeys = async () => {
+  async function fetchApiKeys() {
     try {
       const res = await gatewayAPI.getApiKeys();
       setApiKeys(res.data);
-    } catch (e) {
+    } catch {
       message.error('获取API Key失败');
     }
-  };
+  }
 
-  const fetchRoutes = async () => {
+  async function fetchRoutes() {
     try {
       const res = await gatewayAPI.getRoutes();
       setRoutes(res.data);
-    } catch (e) {
+    } catch {
       message.error('获取路由失败');
     }
-  };
+  }
 
-  const fetchServices = async () => {
+  async function fetchServices() {
     try {
       const { servicesAPI } = await import('../../services/api');
       const res = await servicesAPI.list();
       setServices(res.data);
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error(error);
     }
-  };
+  }
 
   const onSaveConfig = async (values) => {
     try {
       await gatewayAPI.updateConfig(values);
       message.success('配置已保存');
-    } catch (e) {
+    } catch {
       message.error('保存失败');
     }
   };
@@ -102,7 +104,7 @@ export default function Gateway() {
       setIsKeyModalVisible(false);
       keyForm.resetFields();
       fetchApiKeys();
-    } catch (e) {
+    } catch {
       message.error('创建失败');
     }
   };
@@ -112,7 +114,7 @@ export default function Gateway() {
       await gatewayAPI.deleteApiKey(id);
       message.success('已吊销');
       fetchApiKeys();
-    } catch (e) {
+    } catch {
       message.error('操作失败');
     }
   };
@@ -124,7 +126,7 @@ export default function Gateway() {
       setIsRouteModalVisible(false);
       routeForm.resetFields();
       fetchRoutes();
-    } catch (e) {
+    } catch {
       message.error('路由创建失败');
     }
   };
@@ -134,7 +136,7 @@ export default function Gateway() {
       await gatewayAPI.deleteRoute(id);
       message.success('路由已删除');
       fetchRoutes();
-    } catch (e) {
+    } catch {
       message.error('删除失败');
     }
   };
@@ -185,7 +187,7 @@ export default function Gateway() {
                             await gatewayAPI.deleteApiKey(record.id);
                             message.success('历史记录已删除');
                             fetchApiKeys();
-                          } catch (e) {
+                          } catch {
                             message.error('删除失败');
                           }
                         }}>

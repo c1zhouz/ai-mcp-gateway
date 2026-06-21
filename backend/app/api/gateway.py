@@ -1,5 +1,9 @@
-from fastapi import APIRouter, HTTPException
+import fnmatch
+
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from backend.app.core.auth import hash_api_key, mask_api_key, require_api_key
+from backend.app.core.mcp_client import execute_tool
 from backend.app.models.database import get_db
 from backend.app.core.logger import log_manager
 import uuid
@@ -9,6 +13,107 @@ from datetime import datetime
 from typing import Optional, List, Dict
 
 router = APIRouter(prefix="/api/gateway", tags=["gateway"])
+public_router = APIRouter(prefix="/gateway", tags=["gateway-entrypoint"])
+
+
+def _normalize_gateway_path(path: str) -> str:
+    clean = path.strip("/")
+    return f"/{clean}" if clean else "/"
+
+
+def _json_rpc_response(request_id, result=None, error=None):
+    payload = {"jsonrpc": "2.0", "id": request_id}
+    if error is not None:
+        payload["error"] = error
+    else:
+        payload["result"] = result
+    return payload
+
+
+async def _match_route(path: str):
+    normalized_path = _normalize_gateway_path(path)
+    db = await get_db()
+    rows = await db.execute("""
+        SELECT r.*, s.address, s.name as service_name
+        FROM route_rules r
+        JOIN services s ON r.target_service_id=s.id
+        WHERE r.enabled=1
+        ORDER BY r.priority DESC
+    """)
+    async for row in rows:
+        route = dict(row)
+        pattern = _normalize_gateway_path(route["path_pattern"])
+        if fnmatch.fnmatch(normalized_path, pattern):
+            await db.close()
+            return route
+    await db.close()
+    return None
+
+
+async def _list_cached_tools(service_id: str):
+    db = await get_db()
+    rows = await db.execute(
+        "SELECT name, description, parameters_schema FROM tools WHERE service_id=? AND enabled=1 ORDER BY name",
+        [service_id],
+    )
+    tools = []
+    async for row in rows:
+        tool = dict(row)
+        tools.append({
+            "name": tool["name"],
+            "description": tool["description"],
+            "inputSchema": json.loads(tool["parameters_schema"]),
+        })
+    await db.close()
+    return tools
+
+
+@public_router.post("/{path:path}")
+async def gateway_entrypoint(path: str, request: Request):
+    payload = await request.json()
+    request_id = payload.get("id")
+    method = payload.get("method")
+
+    route = await _match_route(path)
+    if not route:
+        raise HTTPException(status_code=404, detail="No route matched gateway path")
+
+    if method == "tools/list":
+        await require_api_key(request, "read")
+        tools = await _list_cached_tools(route["target_service_id"])
+        return _json_rpc_response(request_id, {"tools": tools})
+
+    if method == "tools/call":
+        await require_api_key(request, "write")
+        params = payload.get("params") or {}
+        tool_name = params.get("name")
+        arguments = params.get("arguments") or {}
+        if not tool_name:
+            return _json_rpc_response(
+                request_id,
+                error={"code": -32602, "message": "Missing params.name"},
+            )
+
+        result = await execute_tool(route["address"], tool_name, arguments)
+        if result.get("status") == "success":
+            db = await get_db()
+            await db.execute(
+                "UPDATE tools SET call_count = call_count + 1 WHERE service_id=? AND name=?",
+                [route["target_service_id"], tool_name],
+            )
+            await db.commit()
+            await db.close()
+            return _json_rpc_response(request_id, {"content": result.get("content", [])})
+
+        return _json_rpc_response(
+            request_id,
+            error={"code": -32000, "message": result.get("error", "Tool execution failed")},
+        )
+
+    return _json_rpc_response(
+        request_id,
+        error={"code": -32601, "message": f"Unsupported method: {method}"},
+    )
 
 
 @router.get("/config")
@@ -41,7 +146,7 @@ async def list_api_keys():
     async for r in rows:
         d = dict(r)
         d["permissions"] = json.loads(d["permissions"])
-        d["key_value"] = d["key_value"][:8] + "****"
+        d["key_value"] = mask_api_key(d["key_value"])
         result.append(d)
     await db.close()
     return result
@@ -54,7 +159,7 @@ async def create_api_key(data: dict):
     key_value = "gw-" + secrets.token_hex(24)
     await db.execute(
         "INSERT INTO api_keys (id, name, key_value, permissions, expires_at, created_at) VALUES (?,?,?,?,?,?)",
-        [key_id, data["name"], key_value, json.dumps(data.get("permissions", ["read"])),
+        [key_id, data["name"], hash_api_key(key_value), json.dumps(data.get("permissions", ["read"])),
          data.get("expires_at"), datetime.now().isoformat()]
     )
     await db.commit()

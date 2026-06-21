@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Layout, Menu, Avatar, Dropdown, Badge, Space } from 'antd';
 import {
   HomeOutlined,

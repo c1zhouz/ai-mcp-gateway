@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { DownOutlined, RightOutlined } from '@ant-design/icons';
 import '../../pages/Chat/Chat.css';

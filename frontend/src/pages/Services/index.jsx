@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Row, Col, Card, Badge, Tag, Button, Input, InputNumber, Select, Drawer, Form, message, Switch, Popconfirm, Spin } from 'antd';
 import { CloudServerOutlined, ToolOutlined, DeleteOutlined, EditOutlined, RetweetOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -12,21 +12,21 @@ export default function Services() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchServices();
-  }, []);
-
-  const fetchServices = async () => {
+  async function fetchServices() {
     setLoading(true);
     try {
       const res = await servicesAPI.list();
       setServices(res.data);
-    } catch (e) {
+    } catch {
       message.error('获取服务列表失败');
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
 
   const onSaveService = async (values) => {
     try {
@@ -35,7 +35,7 @@ export default function Services() {
       setDrawerVisible(false);
       form.resetFields();
       fetchServices();
-    } catch (e) {
+    } catch {
       message.error('服务创建失败');
     }
   };
@@ -45,7 +45,7 @@ export default function Services() {
       await servicesAPI.delete(id);
       message.success('已删除');
       fetchServices();
-    } catch (e) {
+    } catch {
       message.error('删除失败');
     }
   };
@@ -55,7 +55,7 @@ export default function Services() {
       await servicesAPI.healthCheck(id);
       message.success('健康检查已触发');
       fetchServices();
-    } catch (e) {
+    } catch {
       message.error('健康检查失败');
     }
   };
@@ -105,20 +105,6 @@ export default function Services() {
           <Form.Item name="description" label="描述"><Input.TextArea rows={2} /></Form.Item>
           <Form.Item name="health_check_interval" label="健康检查间隔 (秒)" initialValue={30}><InputNumber style={{ width: '100%' }} /></Form.Item>
           <Form.Item name="auto_reconnect" label="自动重连" valuePropName="checked" initialValue={true}><Switch /></Form.Item>
-          <Form.Item 
-            name="source_file" 
-            label="源代码路径 (用于动态部署工具)"
-            extra="填写微服务 main.py 的完整绝对路径，部署新工具时会自动写入此文件"
-          >
-            <Input placeholder="/path/to/services/my_service/main.py" />
-          </Form.Item>
-          <Form.Item 
-            name="python_path" 
-            label="Python 解释器路径"
-            extra="用于重启微服务，默认 python3。如使用虚拟环境请填写完整路径"
-          >
-            <Input placeholder="/path/to/venv/bin/python" />
-          </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" block>提交保存</Button>
           </Form.Item>

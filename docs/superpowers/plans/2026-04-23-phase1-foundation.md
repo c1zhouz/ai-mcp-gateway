@@ -518,7 +518,7 @@ async def init_db():
             id INTEGER PRIMARY KEY CHECK (id = 1),
             name TEXT DEFAULT 'AI MCP Gateway',
             listen_address TEXT DEFAULT '0.0.0.0',
-            port INTEGER DEFAULT 8777,
+            port INTEGER DEFAULT 8000,
             timeout_ms INTEGER DEFAULT 30000,
             max_concurrency INTEGER DEFAULT 100,
             log_level TEXT DEFAULT 'INFO',

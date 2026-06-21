@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from backend.app.models.database import init_db
 from backend.app.core.logger import log_manager
 from backend.app.api.dashboard import router as dashboard_router
+from backend.app.api.gateway import public_router as gateway_public_router
 from backend.app.api.gateway import router as gateway_router
 from backend.app.api.services import router as services_router
 from backend.app.api.tools import router as tools_router
@@ -26,6 +27,7 @@ app.add_middleware(
 )
 
 app.include_router(dashboard_router)
+app.include_router(gateway_public_router)
 app.include_router(gateway_router)
 app.include_router(services_router)
 app.include_router(tools_router)

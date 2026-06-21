@@ -128,7 +128,7 @@ const useChatStore = create((set, get) => ({
   isConnected: false,
   isSending: false,
   config: {
-    gatewayUrl: 'http://127.0.0.1:8777',
+    gatewayUrl: 'http://127.0.0.1:8000/gateway',
     gatewayApiKey: '',
     llmApiKey: '',
     llmBaseUrl: '',

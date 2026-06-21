@@ -1,10 +1,9 @@
-import { useCallback } from 'react';
 import useChatStore from '../stores/chatStore';
 
 export default function useSSE() {
   const store = useChatStore();
 
-  const sendMessage = useCallback(async (message) => {
+  const sendMessage = async (message) => {
     const { config } = useChatStore.getState();
     if (!config.llmApiKey) {
       alert('请先配置 LLM API Key');
@@ -16,7 +15,7 @@ export default function useSSE() {
     store.addAssistantMessage();
 
     try {
-      const response = await fetch('http://localhost:8000/api/chat/send', {
+      const response = await fetch('/api/chat/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -65,6 +64,8 @@ export default function useSSE() {
               case 'message':
                 store.updateLastAssistant('content', (useChatStore.getState().messages.findLast(m => m.role === 'assistant')?.content || '') + data.content);
                 break;
+              case 'session':
+                break;
               case 'error':
                 store.updateLastAssistant('content', `❌ Error: ${data.message}`);
                 break;
@@ -80,7 +81,7 @@ export default function useSSE() {
     } finally {
       store.setSending(false);
     }
-  }, []);
+  };
 
   return { sendMessage };
 }

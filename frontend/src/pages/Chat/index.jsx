@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from 'react';
-import { Layout, Input, Select, Button, Form, message, Tag, Space, Spin, AutoComplete } from 'antd';
+import { useEffect, useRef, useState } from 'react';
+import { Layout, Input, Select, Button, Form, message, AutoComplete } from 'antd';
 import { SettingOutlined, LinkOutlined, DisconnectOutlined } from '@ant-design/icons';
 import useChatStore from '../../stores/chatStore';
 import useSSE from '../../hooks/useSSE';
 import MessageBubble from '../../components/Chat/MessageBubble';
 import ChatInput from '../../components/Chat/ChatInput';
-import { servicesAPI, toolsAPI } from '../../services/api';
+import { servicesAPI } from '../../services/api';
 import './Chat.css';
 
 const { Sider, Content } = Layout;
@@ -26,8 +26,8 @@ export default function Chat() {
   const { sendMessage } = useSSE();
   const [form] = Form.useForm();
   const messagesEndRef = useRef(null);
-  const [services, setServices] = React.useState([]);
-  const [modelOptions, setModelOptions] = React.useState(() => {
+  const [services, setServices] = useState([]);
+  const [modelOptions, setModelOptions] = useState(() => {
     const saved = localStorage.getItem('chat_models');
     return saved ? JSON.parse(saved) : [{ value: 'deepseek-v3-2-251201' }];
   });
@@ -35,6 +35,8 @@ export default function Chat() {
   useEffect(() => {
     servicesAPI.list().then(res => setServices(res.data)).catch(console.error);
     form.setFieldsValue(config);
+    // Run once to initialize form values from the current chat config snapshot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

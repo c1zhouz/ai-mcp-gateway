@@ -1,5 +1,4 @@
-import React from 'react';
-import { Tag, Spin } from 'antd';
+import { Tag } from 'antd';
 import { ToolOutlined, CheckCircleOutlined, SyncOutlined } from '@ant-design/icons';
 import '../../pages/Chat/Chat.css';
 
