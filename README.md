@@ -20,6 +20,16 @@ AI Agent / Chat UI
 - **安全收缩**：不提供在线写 Python 代码、写源码或重启服务入口，工具来源收敛为 MCP 服务发现与同步。
 - **测试覆盖核心链路**：后端测试覆盖鉴权网关、路由调用、健康检查、危险部署入口移除和聊天会话持久化。
 
+## 效果截图
+
+### Agent 工具调用过程
+
+![Agent 工具调用过程](docs/images/demo-chat-tool-calls.png)
+
+### 拼团活动运营总结
+
+![拼团活动运营总结](docs/images/demo-chat-summary.png)
+
 ## 技术栈
 
 - Backend: FastAPI, aiosqlite, OpenAI-compatible API client, httpx, MCP Python SDK
